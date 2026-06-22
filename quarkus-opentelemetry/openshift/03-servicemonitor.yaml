@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: quarkus-otel-observability
+  namespace: opentelemetry
+  labels:
+    app: quarkus-otel-observability
+spec:
+  selector:
+    matchLabels:
+      app: quarkus-otel-observability
+  endpoints:
+    - port: http
+      path: /q/metrics
+      interval: 15s

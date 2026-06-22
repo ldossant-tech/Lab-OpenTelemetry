@@ -1,0 +1,128 @@
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: spring-otel-observability
+  namespace: opentelemetry
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: spring-otel-observability
+  namespace: opentelemetry
+spec:
+  source:
+    type: Binary
+    binary: {}
+  strategy:
+    type: Source
+    sourceStrategy:
+      from:
+        kind: DockerImage
+        name: registry.access.redhat.com/ubi9/openjdk-17:1.21
+      env:
+        - name: MAVEN_ARGS_APPEND
+          value: -DskipTests
+        - name: ARTIFACT_DIR
+          value: target
+  output:
+    to:
+      kind: ImageStreamTag
+      name: spring-otel-observability:latest
+  triggers: []
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-otel-observability
+  namespace: opentelemetry
+  labels:
+    app: spring-otel-observability
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spring-otel-observability
+  template:
+    metadata:
+      labels:
+        app: spring-otel-observability
+    spec:
+      containers:
+        - name: app
+          image: image-registry.openshift-image-registry.svc:5000/opentelemetry/spring-otel-observability:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://otel-collector.opentelemetry.svc:4318/v1/traces
+            - name: OTEL_SERVICE_NAMESPACE
+              value: opentelemetry
+            - name: DEPLOYMENT_ENVIRONMENT
+              value: openshift
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 40
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 768Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-otel-observability
+  namespace: opentelemetry
+  labels:
+    app: spring-otel-observability
+spec:
+  selector:
+    app: spring-otel-observability
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: spring-otel-observability
+  namespace: opentelemetry
+spec:
+  to:
+    kind: Service
+    name: spring-otel-observability
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: spring-otel-observability
+  namespace: opentelemetry
+  labels:
+    app: spring-otel-observability
+spec:
+  selector:
+    matchLabels:
+      app: spring-otel-observability
+  endpoints:
+    - port: http
+      path: /actuator/prometheus
+      interval: 15s

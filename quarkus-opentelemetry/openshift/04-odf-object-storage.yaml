@@ -1,0 +1,17 @@
+apiVersion: noobaa.io/v1alpha1
+kind: NooBaa
+metadata:
+  name: noobaa
+  namespace: openshift-storage
+spec:
+  dbStorageClass: gp3-csi
+  pvPoolDefaultStorageClass: gp3-csi
+---
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: tempo-bucket
+  namespace: opentelemetry
+spec:
+  generateBucketName: tempo
+  storageClassName: openshift-storage.noobaa.io

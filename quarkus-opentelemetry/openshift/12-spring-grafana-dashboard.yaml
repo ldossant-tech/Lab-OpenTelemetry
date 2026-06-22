@@ -1,0 +1,430 @@
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: spring-otel-overview
+  namespace: opentelemetry
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  folder: OpenTelemetry Lab
+  uid: spring-otel-overview
+  json: |
+    {
+      "uid": "spring-otel-overview",
+      "title": "Spring Boot - Traces e metricas",
+      "description": "Dashboard operacional da aplicacao Spring Boot instrumentada com OpenTelemetry, Actuator e Prometheus.",
+      "tags": ["opentelemetry", "spring-boot", "tempo", "prometheus"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "30s",
+      "editable": true,
+      "time": {
+        "from": "now-6h",
+        "to": "now"
+      },
+      "links": [
+        {
+          "title": "Aplicacao Spring",
+          "url": "https://spring-otel-observability-opentelemetry.apps.cluster-bzw22.bzw22.sandbox697.opentlc.com/spring/hello/demo",
+          "targetBlank": true,
+          "type": "link",
+          "icon": "external link"
+        },
+        {
+          "title": "Metricas Actuator",
+          "url": "https://spring-otel-observability-opentelemetry.apps.cluster-bzw22.bzw22.sandbox697.opentlc.com/actuator/prometheus",
+          "targetBlank": true,
+          "type": "link",
+          "icon": "external link"
+        },
+        {
+          "title": "Explore Tempo",
+          "url": "/explore?left=%7B%22datasource%22:%22tempo%22,%22queries%22:%5B%7B%22queryType%22:%22traceql%22,%22query%22:%22%7B%20resource.service.name%20%3D%20%5C%22spring-otel-observability%5C%22%20%7D%22%7D%5D%7D",
+          "targetBlank": true,
+          "type": "link",
+          "icon": "external link"
+        }
+      ],
+      "templating": {
+        "list": [
+          {
+            "name": "service",
+            "type": "constant",
+            "label": "Service",
+            "query": "spring-otel-observability",
+            "current": {
+              "text": "spring-otel-observability",
+              "value": "spring-otel-observability"
+            },
+            "hide": 0
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "Requests HTTP - ultimos 30m",
+          "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum(increase(http_server_requests_seconds_count{namespace=\"opentelemetry\",job=\"spring-otel-observability\"}[30m]))",
+              "legendFormat": "requests"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 0
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Erros HTTP - ultimos 30m",
+          "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum(increase(http_server_requests_seconds_count{namespace=\"opentelemetry\",job=\"spring-otel-observability\",status=~\"5..\"}[30m]))",
+              "legendFormat": "errors"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "red", "value": 1 }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "CPU atual",
+          "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"opentelemetry\",pod=~\"spring-otel-observability-.*\",container!=\"\",container!=\"POD\"}[5m]))",
+              "legendFormat": "CPU cores"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "cores",
+              "decimals": 3
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "Memoria atual",
+          "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"opentelemetry\",pod=~\"spring-otel-observability-.*\",container!=\"\",container!=\"POD\"})",
+              "legendFormat": "Memoria"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "decimals": 1
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "id": 5,
+          "type": "table",
+          "title": "Todos os traces",
+          "gridPos": { "h": 9, "w": 24, "x": 0, "y": 5 },
+          "datasource": { "type": "tempo", "uid": "tempo" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "tempo", "uid": "tempo" },
+              "queryType": "traceql",
+              "query": "{ resource.service.name = \"$service\" }",
+              "limit": 50,
+              "tableType": "traces"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": { "show": false }
+          }
+        },
+        {
+          "id": 6,
+          "type": "table",
+          "title": "Traces com erro",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+          "datasource": { "type": "tempo", "uid": "tempo" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "tempo", "uid": "tempo" },
+              "queryType": "traceql",
+              "query": "{ resource.service.name = \"$service\" && status = error }",
+              "limit": 30,
+              "tableType": "traces"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": { "show": false }
+          }
+        },
+        {
+          "id": 7,
+          "type": "table",
+          "title": "Spans customizados Spring",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+          "datasource": { "type": "tempo", "uid": "tempo" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "tempo", "uid": "tempo" },
+              "queryType": "traceql",
+              "query": "{ resource.service.name = \"$service\" && name =~ \".*spring\\\\.(order|payment).*\" }",
+              "limit": 30,
+              "tableType": "traces"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": { "show": false }
+          }
+        },
+        {
+          "id": 8,
+          "type": "table",
+          "title": "Rota /spring/hello",
+          "gridPos": { "h": 7, "w": 8, "x": 0, "y": 22 },
+          "datasource": { "type": "tempo", "uid": "tempo" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "tempo", "uid": "tempo" },
+              "queryType": "traceql",
+              "query": "{ resource.service.name = \"$service\" && name =~ \".*hello.*\" }",
+              "limit": 15,
+              "tableType": "traces"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": { "show": false }
+          }
+        },
+        {
+          "id": 9,
+          "type": "table",
+          "title": "Rota /spring/order",
+          "gridPos": { "h": 7, "w": 8, "x": 8, "y": 22 },
+          "datasource": { "type": "tempo", "uid": "tempo" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "tempo", "uid": "tempo" },
+              "queryType": "traceql",
+              "query": "{ resource.service.name = \"$service\" && name =~ \".*order.*\" }",
+              "limit": 15,
+              "tableType": "traces"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": { "show": false }
+          }
+        },
+        {
+          "id": 10,
+          "type": "table",
+          "title": "Rota /spring/error",
+          "gridPos": { "h": 7, "w": 8, "x": 16, "y": 22 },
+          "datasource": { "type": "tempo", "uid": "tempo" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "tempo", "uid": "tempo" },
+              "queryType": "traceql",
+              "query": "{ resource.service.name = \"$service\" && status = error }",
+              "limit": 15,
+              "tableType": "traces"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": { "show": false }
+          }
+        },
+        {
+          "id": 11,
+          "type": "timeseries",
+          "title": "Requests por rota e status",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 29 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "round(sum by (uri, status) (increase(http_server_requests_seconds_count{namespace=\"opentelemetry\",job=\"spring-otel-observability\"}[30m])))",
+              "legendFormat": "{{uri}} {{status}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 0
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom" },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 12,
+          "type": "timeseries",
+          "title": "Latencia media por rota",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 29 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "(sum by (uri) (increase(http_server_requests_seconds_sum{namespace=\"opentelemetry\",job=\"spring-otel-observability\"}[30m])) / sum by (uri) (increase(http_server_requests_seconds_count{namespace=\"opentelemetry\",job=\"spring-otel-observability\"}[30m]))) and on (uri) (sum by (uri) (increase(http_server_requests_seconds_count{namespace=\"opentelemetry\",job=\"spring-otel-observability\"}[30m])) > 0)",
+              "legendFormat": "{{uri}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "decimals": 3
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom" },
+            "tooltip": { "mode": "multi", "sort": "desc" }
+          }
+        },
+        {
+          "id": 13,
+          "type": "timeseries",
+          "title": "CPU da aplicacao",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 37 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"opentelemetry\",pod=~\"spring-otel-observability-.*\",container!=\"\",container!=\"POD\"}[5m]))",
+              "legendFormat": "{{pod}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "cores",
+              "decimals": 3
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom" },
+            "tooltip": { "mode": "single", "sort": "none" }
+          }
+        },
+        {
+          "id": 14,
+          "type": "timeseries",
+          "title": "Memoria da aplicacao",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 37 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"opentelemetry\",pod=~\"spring-otel-observability-.*\",container!=\"\",container!=\"POD\"})",
+              "legendFormat": "{{pod}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "decimals": 1
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom" },
+            "tooltip": { "mode": "single", "sort": "none" }
+          }
+        }
+      ]
+    }

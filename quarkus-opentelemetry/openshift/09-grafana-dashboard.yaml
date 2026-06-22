@@ -1,0 +1,581 @@
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: quarkus-otel-overview
+  namespace: opentelemetry
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: grafana
+  folder: OpenTelemetry Lab
+  uid: quarkus-otel-overview
+  json: |
+    {
+      "uid": "quarkus-otel-overview",
+      "title": "OpenTelemetry Lab - Traces e metricas",
+      "description": "Dashboard para explicar como OpenTelemetry instrumenta uma aplicacao Quarkus, envia traces ao RHBO Collector/Tempo e expoe metricas coletadas pelo Prometheus Operator do OpenShift.",
+      "tags": ["opentelemetry", "quarkus", "rhbo", "tempo", "prometheus", "odf"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 3,
+      "refresh": "30s",
+      "editable": true,
+      "time": {
+        "from": "now-30m",
+        "to": "now"
+      },
+      "links": [
+        {
+          "title": "Aplicacao Quarkus",
+          "url": "https://quarkus-otel-observability-opentelemetry.apps.cluster-bzw22.bzw22.sandbox697.opentlc.com/observability/help",
+          "targetBlank": true,
+          "type": "link",
+          "icon": "external link"
+        },
+        {
+          "title": "Explore Tempo",
+          "url": "/explore?left=%7B%22datasource%22:%22tempo%22,%22queries%22:%5B%7B%22queryType%22:%22traceql%22,%22query%22:%22%7B%20resource.service.name%20%3D%20%5C%22quarkus-otel-observability%5C%22%20%7D%22%7D%5D%7D",
+          "targetBlank": true,
+          "type": "link",
+          "icon": "external link"
+        }
+      ],
+      "templating": {
+        "list": [
+          {
+            "name": "service",
+            "type": "constant",
+            "label": "Service",
+            "query": "quarkus-otel-observability",
+            "current": {
+              "text": "quarkus-otel-observability",
+              "value": "quarkus-otel-observability"
+            },
+            "hide": 0
+          }
+        ]
+      },
+      "panels": [
+        {
+          "id": 1,
+          "type": "text",
+          "title": "O que o OpenTelemetry esta mostrando",
+          "gridPos": { "h": 7, "w": 9, "x": 0, "y": 0 },
+          "options": {
+            "mode": "markdown",
+            "content": "### Da request ao trace\n\n**Aplicacao Quarkus** recebe uma request HTTP e cria spans automaticos.\n\n**Codigo de negocio** adiciona spans com `@WithSpan`: hello, checkout, inventory, payment, slow-operation e error.\n\n**RHBO Collector** recebe OTLP, processa e exporta.\n\n**Grafana Tempo** armazena os traces em bucket S3 do **OpenShift Data Foundation/NooBaa**.\n\n**Grafana** permite responder: o que aconteceu, onde falhou e onde demorou."
+          }
+        },
+        {
+          "id": 2,
+          "type": "text",
+          "title": "Gerar dados para a demo",
+          "gridPos": { "h": 7, "w": 8, "x": 9, "y": 0 },
+          "options": {
+            "mode": "markdown",
+            "content": "```bash\nAPP_URL=https://quarkus-otel-observability-opentelemetry.apps.cluster-bzw22.bzw22.sandbox697.opentlc.com\ncurl \"$APP_URL/observability/hello/lucas\"\ncurl \"$APP_URL/observability/checkout/ana?items=4\"\ncurl \"$APP_URL/observability/slow?ms=900\"\ncurl -i \"$APP_URL/observability/error\"\n```\n\nO dashboard atualiza a cada 30s. Use o range **Last 30 minutes** para a apresentacao."
+          }
+        },
+        {
+          "id": 3,
+          "type": "text",
+          "title": "Como contar a historia",
+          "gridPos": { "h": 7, "w": 7, "x": 17, "y": 0 },
+          "options": {
+            "mode": "markdown",
+            "content": "### Roteiro para o cliente\n\n1. **Todas as requests** mostra o que entrou.\n2. **Erros** mostra falhas reais do fluxo.\n3. **Lentas** mostra latencia como experiencia do usuario.\n4. **Checkout** abre a request em spans internos.\n5. **Spans de negocio** prova que a instrumentacao explica o codigo, nao apenas infraestrutura."
+          }
+        },
+        {
+          "id": 4,
+          "type": "table",
+          "title": "Todas as requests da aplicacao",
+          "description": "Busca todos os traces do service name da aplicacao. Esta e a visao geral do que entrou no sistema.",
+          "gridPos": { "h": 9, "w": 24, "x": 0, "y": 7 },
+          "datasource": { "type": "tempo", "uid": "tempo" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "tempo", "uid": "tempo" },
+              "queryType": "traceql",
+              "query": "{ resource.service.name = \"$service\" }",
+              "limit": 50,
+              "tableType": "traces"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": { "show": false }
+          }
+        },
+        {
+          "id": 5,
+          "type": "table",
+          "title": "Traces com erro no geral",
+          "description": "Mostra traces em que algum span terminou com status de erro. Use /observability/error para popular este painel.",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+          "datasource": { "type": "tempo", "uid": "tempo" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "tempo", "uid": "tempo" },
+              "queryType": "traceql",
+              "query": "{ resource.service.name = \"$service\" && status = error }",
+              "limit": 30,
+              "tableType": "traces"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": { "show": false }
+          }
+        },
+        {
+          "id": 6,
+          "type": "table",
+          "title": "Requests lentas",
+          "description": "Mostra traces com duracao acima de 750 ms. Use /observability/slow para gerar exemplos claros.",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+          "datasource": { "type": "tempo", "uid": "tempo" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "tempo", "uid": "tempo" },
+              "queryType": "traceql",
+              "query": "{ resource.service.name = \"$service\" } | duration > 750ms",
+              "limit": 30,
+              "tableType": "traces"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": { "show": false }
+          }
+        },
+        {
+          "id": 7,
+          "type": "table",
+          "title": "Checkout: request completa de negocio",
+          "description": "Mostra traces relacionados ao fluxo de checkout, incluindo spans de estoque e pagamento.",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+          "datasource": { "type": "tempo", "uid": "tempo" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "tempo", "uid": "tempo" },
+              "queryType": "traceql",
+              "query": "{ resource.service.name = \"$service\" && name =~ \".*(checkout|inventory|payment).*\" }",
+              "limit": 30,
+              "tableType": "traces"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": { "show": false }
+          }
+        },
+        {
+          "id": 8,
+          "type": "table",
+          "title": "Spans de negocio instrumentados",
+          "description": "Evidencia os spans criados pela aplicacao, nao apenas spans automaticos HTTP.",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+          "datasource": { "type": "tempo", "uid": "tempo" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "tempo", "uid": "tempo" },
+              "queryType": "traceql",
+              "query": "{ resource.service.name = \"$service\" && name =~ \".*(demo.hello|demo.inventory|demo.slow-operation|payment|checkout).*\" }",
+              "limit": 40,
+              "tableType": "traces"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": { "show": false }
+          }
+        },
+        {
+          "id": 9,
+          "type": "table",
+          "title": "Rota /hello",
+          "description": "Trace simples: bom para explicar span automatico HTTP + span manual demo.hello.",
+          "gridPos": { "h": 7, "w": 6, "x": 0, "y": 32 },
+          "datasource": { "type": "tempo", "uid": "tempo" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "tempo", "uid": "tempo" },
+              "queryType": "traceql",
+              "query": "{ resource.service.name = \"$service\" && name =~ \".*hello.*\" }",
+              "limit": 15,
+              "tableType": "traces"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": { "show": false }
+          }
+        },
+        {
+          "id": 10,
+          "type": "table",
+          "title": "Rota /checkout",
+          "description": "Trace com varios spans: ideal para demonstrar causalidade e fluxo de negocio.",
+          "gridPos": { "h": 7, "w": 6, "x": 6, "y": 32 },
+          "datasource": { "type": "tempo", "uid": "tempo" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "tempo", "uid": "tempo" },
+              "queryType": "traceql",
+              "query": "{ resource.service.name = \"$service\" && name =~ \".*checkout.*\" }",
+              "limit": 15,
+              "tableType": "traces"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": { "show": false }
+          }
+        },
+        {
+          "id": 11,
+          "type": "table",
+          "title": "Rota /slow",
+          "description": "Trace com latencia proposital para demonstrar investigacao de performance.",
+          "gridPos": { "h": 7, "w": 6, "x": 12, "y": 32 },
+          "datasource": { "type": "tempo", "uid": "tempo" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "tempo", "uid": "tempo" },
+              "queryType": "traceql",
+              "query": "{ resource.service.name = \"$service\" && name =~ \".*slow.*\" }",
+              "limit": 15,
+              "tableType": "traces"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": { "show": false }
+          }
+        },
+        {
+          "id": 12,
+          "type": "table",
+          "title": "Rota /error",
+          "description": "Trace de erro intencional: bom para mostrar excecao registrada e status ERROR.",
+          "gridPos": { "h": 7, "w": 6, "x": 18, "y": 32 },
+          "datasource": { "type": "tempo", "uid": "tempo" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "tempo", "uid": "tempo" },
+              "queryType": "traceql",
+              "query": "{ resource.service.name = \"$service\" && status = error }",
+              "limit": 15,
+              "tableType": "traces"
+            }
+          ],
+          "options": {
+            "showHeader": true,
+            "cellHeight": "sm",
+            "footer": { "show": false }
+          }
+        },
+        {
+          "id": 13,
+          "type": "text",
+          "title": "Mensagem principal para fechar",
+          "gridPos": { "h": 5, "w": 24, "x": 0, "y": 39 },
+          "options": {
+            "mode": "markdown",
+            "content": "### O valor pratico\n\nOpenTelemetry nao e a tela final. Ele e o padrao que permite instrumentar a aplicacao uma vez, enviar telemetria por OTLP e consumir esses sinais em ferramentas como o Collector, Tempo e Grafana. Neste lab, o cliente consegue ver a jornada completa de uma request: entrada HTTP, spans de negocio, erro, latencia, armazenamento no ODF e investigacao no Grafana."
+          }
+        },
+        {
+          "id": 14,
+          "type": "text",
+          "title": "Metricas da aplicacao e consumo no OpenShift",
+          "gridPos": { "h": 4, "w": 24, "x": 0, "y": 44 },
+          "options": {
+            "mode": "markdown",
+            "content": "### Traces + metricas no mesmo dashboard\n\n**Tempo** explica o caminho de cada request. **Prometheus/Thanos do OpenShift** mostra consumo e comportamento agregado: CPU, memoria, pods, restarts, volume por rota e latencia media. Juntos, eles ajudam a responder se o problema esta em uma request especifica ou no comportamento geral da aplicacao."
+          }
+        },
+        {
+          "id": 15,
+          "type": "stat",
+          "title": "CPU atual",
+          "gridPos": { "h": 5, "w": 6, "x": 0, "y": 48 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"opentelemetry\",pod=~\"quarkus-otel-observability-.*\",container!=\"\",container!=\"POD\"}[5m]))",
+              "legendFormat": "CPU cores"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "cores",
+              "decimals": 3
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": ["lastNotNull"],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "id": 16,
+          "type": "stat",
+          "title": "Memoria atual",
+          "gridPos": { "h": 5, "w": 6, "x": 6, "y": 48 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"opentelemetry\",pod=~\"quarkus-otel-observability-.*\",container!=\"\",container!=\"POD\"})",
+              "legendFormat": "Memoria"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "decimals": 1
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": ["lastNotNull"],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "value",
+            "graphMode": "area",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "id": 17,
+          "type": "stat",
+          "title": "Pods prontos",
+          "gridPos": { "h": 5, "w": 6, "x": 12, "y": 48 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum(kube_pod_status_ready{namespace=\"opentelemetry\",pod=~\"quarkus-otel-observability-.*\",condition=\"true\"})",
+              "legendFormat": "Pods"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 0
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": ["lastNotNull"],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "id": 18,
+          "type": "stat",
+          "title": "Restarts",
+          "gridPos": { "h": 5, "w": 6, "x": 18, "y": 48 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum(kube_pod_container_status_restarts_total{namespace=\"opentelemetry\",pod=~\"quarkus-otel-observability-.*\"})",
+              "legendFormat": "Restarts"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 0
+            },
+            "overrides": []
+          },
+          "options": {
+            "reduceOptions": {
+              "calcs": ["lastNotNull"],
+              "fields": "",
+              "values": false
+            },
+            "orientation": "auto",
+            "textMode": "auto",
+            "colorMode": "value",
+            "graphMode": "none",
+            "justifyMode": "auto"
+          }
+        },
+        {
+          "id": 19,
+          "type": "timeseries",
+          "title": "CPU da aplicacao",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 53 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum by (pod) (rate(container_cpu_usage_seconds_total{namespace=\"opentelemetry\",pod=~\"quarkus-otel-observability-.*\",container!=\"\",container!=\"POD\"}[5m]))",
+              "legendFormat": "{{pod}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "cores",
+              "decimals": 3
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          }
+        },
+        {
+          "id": 20,
+          "type": "timeseries",
+          "title": "Memoria da aplicacao",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 53 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "sum by (pod) (container_memory_working_set_bytes{namespace=\"opentelemetry\",pod=~\"quarkus-otel-observability-.*\",container!=\"\",container!=\"POD\"})",
+              "legendFormat": "{{pod}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "decimals": 1
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          }
+        },
+        {
+          "id": 21,
+          "type": "timeseries",
+          "title": "Requests por rota e status - ultimos 30m",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 61 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "round(sum by (uri, status) (increase(http_server_requests_seconds_count{namespace=\"opentelemetry\",job=\"quarkus-otel-observability\"}[30m])))",
+              "legendFormat": "{{uri}} {{status}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "decimals": 2
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        },
+        {
+          "id": 22,
+          "type": "timeseries",
+          "title": "Latencia media por rota - ultimos 30m",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 61 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "(sum by (uri) (increase(http_server_requests_seconds_sum{namespace=\"opentelemetry\",job=\"quarkus-otel-observability\"}[30m])) / sum by (uri) (increase(http_server_requests_seconds_count{namespace=\"opentelemetry\",job=\"quarkus-otel-observability\"}[30m]))) and on (uri) (sum by (uri) (increase(http_server_requests_seconds_count{namespace=\"opentelemetry\",job=\"quarkus-otel-observability\"}[30m])) > 0)",
+              "legendFormat": "{{uri}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s",
+              "decimals": 3
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom"
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        }
+      ]
+    }

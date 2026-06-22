@@ -1,0 +1,22 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: quarkus-otel-observability
+  namespace: opentelemetry
+spec:
+  source:
+    type: Binary
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: src/main/docker/Dockerfile.openshift
+  output:
+    to:
+      kind: ImageStreamTag
+      name: quarkus-otel-observability:latest
+---
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: quarkus-otel-observability
+  namespace: opentelemetry

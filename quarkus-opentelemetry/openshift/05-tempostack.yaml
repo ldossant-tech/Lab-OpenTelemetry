@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: noobaa-service-ca
+  namespace: opentelemetry
+  annotations:
+    service.beta.openshift.io/inject-cabundle: "true"
+---
+# Requer Tempo Operator instalado.
+apiVersion: tempo.grafana.com/v1alpha1
+kind: TempoStack
+metadata:
+  name: sample
+  namespace: opentelemetry
+spec:
+  storage:
+    secret:
+      name: tempo-object-storage
+      type: s3
+    tls:
+      enabled: true
+      caName: noobaa-service-ca
+  storageSize: 1Gi
+  resources:
+    total:
+      limits:
+        memory: 8Gi
+        cpu: "2"
+---
+# Service auxiliar para dar um nome estavel ao endpoint OTLP gRPC do distributor.
+# Se o Tempo Operator criar outro label para o distributor no seu cluster,
+# ajuste o selector com base em:
+#   oc -n opentelemetry get pods --show-labels | grep tempo
+apiVersion: v1
+kind: Service
+metadata:
+  name: tempo-otlp
+  namespace: opentelemetry
+spec:
+  selector:
+    app.kubernetes.io/component: distributor
+    app.kubernetes.io/instance: sample
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+    - name: otlp-http
+      port: 4318
+      targetPort: 4318

@@ -1,0 +1,7 @@
+FROM registry.access.redhat.com/ubi9/openjdk-17:1.21
+
+WORKDIR /deployments
+COPY target/spring-otel-observability-1.0.0-SNAPSHOT.jar /deployments/app.jar
+
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "/deployments/app.jar"]

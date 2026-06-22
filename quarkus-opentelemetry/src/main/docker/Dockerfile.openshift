@@ -1,0 +1,14 @@
+FROM registry.redhat.io/ubi8/openjdk-17:latest
+
+USER 0
+WORKDIR /workspace
+COPY . .
+
+RUN mvn package -DskipTests
+RUN chown -R 185:0 /workspace
+
+EXPOSE 8080
+USER 185
+
+ENV JAVA_APP_JAR="/workspace/target/quarkus-app/quarkus-run.jar"
+ENTRYPOINT ["/opt/jboss/container/java/run/run-java.sh"]
