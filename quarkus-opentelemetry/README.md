@@ -14,7 +14,7 @@ Principais referencias para validar a abordagem em ambientes Red Hat:
 | Red Hat build of OpenTelemetry e Tempo no OpenShift | [Distributed tracing documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/distributed_tracing/index) |
 | User Workload Monitoring / Prometheus | [Monitoring documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/monitoring/index) |
 
-O codigo deste lab demonstra a instrumentacao da aplicacao. Em ambiente de cliente, valide a versao do Red Hat build of Quarkus, extensoes habilitadas, padrao de build e versoes de dependencias com a documentacao oficial e a matriz de suporte vigente.
+O codigo deste lab demonstra a instrumentacao da aplicacao. Em ambiente produtivo, valide a versao do Red Hat build of Quarkus, extensoes habilitadas, padrao de build e versoes de dependencias com a documentacao oficial e a matriz de suporte vigente.
 
 ## Visao geral
 
@@ -335,10 +335,10 @@ Consulta para spans de negocio:
 
 - Ajustar `quarkus.application.name` para o nome real do servico.
 - Ajustar `OTEL_EXPORTER_OTLP_ENDPOINT` para o Collector do ambiente.
-- Definir `service.namespace` e `deployment.environment` conforme padrao do cliente.
+- Definir `service.namespace` e `deployment.environment` conforme seu padrao.
 - Rever amostragem, retencao e cardinalidade de atributos antes de producao.
 - Evitar atributos com dados sensiveis ou alta cardinalidade, como documentos, tokens ou e-mails completos.
 
-## Nota para uso em cliente
+## Nota para uso
 
-Este documento descreve a configuracao aplicada neste lab Quarkus. Para producao, use-o como referencia inicial e confirme a implementacao final com as documentacoes oficiais da Red Hat, matriz de suporte, padroes internos do cliente e requisitos de seguranca/compliance.
+Este documento descreve a configuracao aplicada neste lab Quarkus. Para producao, use-o como referencia inicial e confirme a implementacao final com as documentacoes oficiais da Red Hat, matriz de suporte, padroes internos e requisitos de seguranca/compliance.
