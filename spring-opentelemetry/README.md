@@ -4,6 +4,18 @@ Este documento orienta como a aplicacao Spring Boot deste repositorio foi config
 
 Use este guia quando o objetivo for entender ou replicar a configuracao dentro de uma aplicacao Spring Boot.
 
+## Referencias oficiais
+
+Principais referencias Red Hat relacionadas a este lab:
+
+| Tema | Documentacao oficial |
+|---|---|
+| Red Hat build of OpenTelemetry e Tempo no OpenShift | [Distributed tracing documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/distributed_tracing/index) |
+| User Workload Monitoring / Prometheus | [Monitoring documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/monitoring/index) |
+| Builds com BuildConfig | [Builds using BuildConfig](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/builds_using_buildconfig/index) |
+
+Neste exemplo, a aplicacao usa Spring Boot, Actuator, Micrometer Tracing e exporter OTLP. Os componentes Red Hat suportados no fluxo sao o OpenShift, Red Hat build of OpenTelemetry, OpenShift Monitoring/Prometheus e a base de execucao usada no cluster. As bibliotecas Spring/Micrometer devem ser validadas conforme a matriz de suporte, padroes internos e stack Java adotada pelo cliente.
+
 ## Visao geral
 
 ```text
@@ -108,6 +120,10 @@ management.tracing.enabled=true
 Ativa o tracing no Spring Boot/Micrometer. Esta propriedade nao e OpenTelemetry pura; ela liga o mecanismo de tracing do Spring.
 
 Como a aplicacao possui `micrometer-tracing-bridge-otel` e `opentelemetry-exporter-otlp`, os traces sao enviados usando OpenTelemetry/OTLP.
+
+No OpenShift, esses traces sao recebidos pelo Collector gerenciado pelo Red Hat build of OpenTelemetry:
+
+- [Distributed tracing documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/distributed_tracing/index)
 
 ```properties
 management.tracing.sampling.probability=1.0
@@ -264,6 +280,10 @@ Ele instrui o Prometheus do OpenShift a coletar:
 /actuator/prometheus
 ```
 
+Referencia oficial relacionada:
+
+- [Monitoring documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/monitoring/index)
+
 ## Build e deploy
 
 A partir da raiz do repositorio:
@@ -323,3 +343,7 @@ Consulta para spans customizados:
 - Rever `management.tracing.sampling.probability` antes de producao.
 - Evitar tags/spans com dados sensiveis ou alta cardinalidade.
 - Validar a versao Spring Boot/Micrometer conforme a matriz de suporte do cliente.
+
+## Nota para uso em cliente
+
+Este documento descreve a configuracao aplicada neste lab Spring Boot. Para producao, use-o como referencia inicial e confirme a implementacao final com as documentacoes oficiais da Red Hat para a plataforma, a matriz de suporte do cliente, os padroes internos da stack Spring e os requisitos de seguranca/compliance.

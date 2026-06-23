@@ -41,9 +41,9 @@ Use estas paginas como referencia oficial para validar instalacao, suporte, para
 
 | Tema | Documentacao oficial |
 |---|---|
-| Red Hat build of OpenTelemetry | [Installing the Red Hat build of OpenTelemetry](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/observability/otel-installing) |
-| Tempo Operator / TempoStack | [Installing the distributed tracing platform Tempo](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/observability/distr-tracing-tempo-installing) |
-| User Workload Monitoring / Prometheus | [Configuring user workload monitoring](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/monitoring/configuring-user-workload-monitoring) |
+| Red Hat build of OpenTelemetry | [Distributed tracing documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/distributed_tracing/index) |
+| Tempo Operator / TempoStack | [Distributed tracing documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/distributed_tracing/index) |
+| User Workload Monitoring / Prometheus | [Monitoring documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/monitoring/index) |
 | OpenShift Data Foundation / ObjectBucketClaim | [Object Bucket Claim](https://docs.redhat.com/en/documentation/red_hat_openshift_data_foundation/latest/html/managing_hybrid_and_multicloud_resources/object-bucket-claim) |
 | Builds com BuildConfig | [Builds using BuildConfig](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/builds_using_buildconfig/index) |
 
@@ -157,8 +157,7 @@ Ele cria as subscriptions:
 
 Referencias oficiais:
 
-- [Installing the Red Hat build of OpenTelemetry](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/observability/otel-installing)
-- [Installing the distributed tracing platform Tempo](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/observability/distr-tracing-tempo-installing)
+- [Distributed tracing documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/distributed_tracing/index)
 
 Aplicar:
 
@@ -283,7 +282,7 @@ Esse manifesto cria:
 
 Referencia oficial:
 
-- [Installing the distributed tracing platform Tempo](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/observability/distr-tracing-tempo-installing)
+- [Distributed tracing documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/distributed_tracing/index)
 
 Aplicar:
 
@@ -328,7 +327,7 @@ O Collector criado pelo Red Hat build of OpenTelemetry:
 
 Referencia oficial:
 
-- [Installing the Red Hat build of OpenTelemetry](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/observability/otel-installing)
+- [Distributed tracing documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/distributed_tracing/index)
 
 Aplicar:
 
@@ -350,7 +349,7 @@ O OpenShift Monitoring precisa estar habilitado para coletar metricas de aplicac
 
 Referencia oficial:
 
-- [Configuring user workload monitoring](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/monitoring/configuring-user-workload-monitoring)
+- [Monitoring documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/monitoring/index)
 
 Manifesto:
 
