@@ -11,7 +11,7 @@ As configuracoes dentro de cada aplicacao ficam em documentos separados:
 
 ## Objetivo
 
-Ao final do lab, o cliente tera:
+Ao final do lab, você tera:
 
 - uma aplicacao Quarkus instrumentada com OpenTelemetry e Micrometer;
 - uma aplicacao Spring Boot instrumentada com Micrometer Tracing, OpenTelemetry OTLP exporter e Actuator;
