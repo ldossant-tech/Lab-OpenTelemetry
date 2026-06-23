@@ -1,124 +1,320 @@
-# OpenTelemetry Lab no OpenShift
+# Configuracao da aplicacao Quarkus
 
-Lab para apresentar como o OpenTelemetry atua em uma aplicacao Quarkus rodando no OpenShift.
+Este documento orienta como a aplicacao Quarkus deste repositorio foi configurada para enviar traces e expor metricas no ambiente OpenShift preparado pelo [README principal](../README.md).
 
-Namespace usado no lab:
+Use este guia quando o objetivo for entender ou replicar a configuracao dentro de uma aplicacao Quarkus.
 
-```text
-opentelemetry
-```
-
-Arquitetura:
+## Visao geral
 
 ```text
 Quarkus
-  -> OTLP
-Red Hat build of OpenTelemetry Collector
-  -> OTLP
-Grafana Tempo
-  -> Grafana
+  -> quarkus-opentelemetry
+  -> OTLP gRPC
+  -> Red Hat build of OpenTelemetry Collector
 
 Quarkus
+  -> quarkus-micrometer-registry-prometheus
   -> /q/metrics
-Prometheus Operator / OpenShift User Workload Monitoring
-  -> Grafana
+  -> OpenShift Monitoring / Prometheus
 ```
 
-Componentes por operator:
+## Dependencias Maven
 
-- Red Hat build of OpenTelemetry
-- Tempo Operator
-- Grafana Operator
-- OpenShift Data Foundation, usado como S3 de laboratorio para o Tempo
-- Prometheus Operator do OpenShift, via User Workload Monitoring e `ServiceMonitor`
-
-O Grafana recebe tambem um dashboard pronto:
+Arquivo:
 
 ```text
-OpenTelemetry Lab - Traces e metricas
+pom.xml
 ```
 
-Os manifests de `Subscription` para Grafana estao em `openshift/00-operators.yaml`. ODF pode ser instalado com `openshift/00-odf-operator.yaml`. RHBO e Tempo ja podem existir no cluster; se nao existirem, instale-os pelo OperatorHub antes do lab.
+Dependencias relevantes:
 
-A documentacao passo a passo esta em:
-
-[docs/lab-openshift.md](docs/lab-openshift.md)
-
-O que foi inserido na aplicacao para traces e metricas esta em:
-
-[docs/instrumentacao-aplicacao.md](docs/instrumentacao-aplicacao.md)
-
-Quando as ferramentas locais estiverem instaladas e o `oc` estiver logado no cluster, o lab pode ser aplicado com:
-
-```bash
-chmod +x scripts/deploy-lab.sh
-./scripts/deploy-lab.sh
+```xml
+<dependency>
+  <groupId>io.quarkus</groupId>
+  <artifactId>quarkus-rest</artifactId>
+</dependency>
+<dependency>
+  <groupId>io.quarkus</groupId>
+  <artifactId>quarkus-rest-jackson</artifactId>
+</dependency>
+<dependency>
+  <groupId>io.quarkus</groupId>
+  <artifactId>quarkus-opentelemetry</artifactId>
+</dependency>
+<dependency>
+  <groupId>io.quarkus</groupId>
+  <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
+</dependency>
+<dependency>
+  <groupId>io.quarkus</groupId>
+  <artifactId>quarkus-smallrye-health</artifactId>
+</dependency>
 ```
 
-Rotas principais da aplicacao:
+Funcoes:
 
-- `/observability/help`
-- `/observability/hello/{name}`
-- `/observability/inventory`
-- `/observability/checkout/{customer}?items=3`
-- `/observability/slow?ms=800`
-- `/observability/error`
-- `/q/metrics`
+| Dependencia | Funcao |
+|---|---|
+| `quarkus-rest` | Endpoints REST |
+| `quarkus-rest-jackson` | Respostas JSON |
+| `quarkus-opentelemetry` | Instrumentacao e exportacao OTLP |
+| `quarkus-micrometer-registry-prometheus` | Metricas Prometheus |
+| `quarkus-smallrye-health` | Health checks para probes |
 
-## Aplicacao Spring Boot para comparacao
+## Propriedades da aplicacao
 
-Tambem ha uma aplicacao Spring Boot minima em:
+Arquivo:
 
 ```text
-spring-opentelemetry/
+src/main/resources/application.properties
 ```
 
-Ela serve para demonstrar onde o Spring configura traces e metricas:
-
-```text
-spring-opentelemetry/src/main/resources/application.properties
-```
-
-Traces:
+Configuracao usada:
 
 ```properties
-management.tracing.enabled=true
-management.tracing.sampling.probability=1.0
-management.otlp.tracing.endpoint=${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+quarkus.application.name=quarkus-otel-observability
+quarkus.http.host=0.0.0.0
+quarkus.http.port=8080
+
+quarkus.otel.enabled=true
+quarkus.otel.exporter.otlp.endpoint=${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
+quarkus.otel.resource.attributes=service.namespace=${OTEL_SERVICE_NAMESPACE:opentelemetry},deployment.environment=${DEPLOYMENT_ENVIRONMENT:local}
+
+quarkus.micrometer.export.prometheus.path=/q/metrics
+quarkus.micrometer.binder.http-server.enabled=true
+quarkus.micrometer.binder.jvm=true
+quarkus.micrometer.binder.system=true
+
+quarkus.log.category."com.example.observability".level=INFO
 ```
 
-Metricas Prometheus:
+### Nome da aplicacao
 
 ```properties
-management.endpoints.web.exposure.include=health,info,prometheus
-management.prometheus.metrics.export.enabled=true
+quarkus.application.name=quarkus-otel-observability
 ```
 
-Rotas Spring:
+Define o nome do servico. Esse valor aparece no Tempo/Grafana como `service.name`.
 
-- `/spring/hello/{name}`
-- `/spring/order/{customer}?items=3`
-- `/spring/error`
-- `/actuator/prometheus`
+### Porta HTTP
 
-Para subir no OpenShift, apos `oc login`:
+```properties
+quarkus.http.host=0.0.0.0
+quarkus.http.port=8080
+```
+
+Permite que a aplicacao escute dentro do container na porta `8080`.
+
+### Traces
+
+```properties
+quarkus.otel.enabled=true
+```
+
+Ativa OpenTelemetry no Quarkus.
+
+```properties
+quarkus.otel.exporter.otlp.endpoint=${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4317}
+```
+
+Define o endpoint OTLP. No OpenShift, a variavel `OTEL_EXPORTER_OTLP_ENDPOINT` aponta para:
+
+```text
+http://otel-collector.opentelemetry.svc:4317
+```
+
+O Quarkus envia traces via OTLP gRPC.
+
+```properties
+quarkus.otel.resource.attributes=service.namespace=${OTEL_SERVICE_NAMESPACE:opentelemetry},deployment.environment=${DEPLOYMENT_ENVIRONMENT:local}
+```
+
+Adiciona atributos de recurso aos traces:
+
+- `service.namespace`
+- `deployment.environment`
+
+Esses atributos ajudam em filtros no Grafana/Tempo.
+
+### Metricas
+
+```properties
+quarkus.micrometer.export.prometheus.path=/q/metrics
+```
+
+Expoe metricas Prometheus em:
+
+```text
+/q/metrics
+```
+
+```properties
+quarkus.micrometer.binder.http-server.enabled=true
+```
+
+Habilita metricas HTTP, como contagem de requests, status e latencia por rota.
+
+```properties
+quarkus.micrometer.binder.jvm=true
+quarkus.micrometer.binder.system=true
+```
+
+Habilita metricas de JVM e sistema.
+
+## Spans customizados
+
+O Quarkus ja cria spans automaticos para requests HTTP. Para explicar o fluxo interno da aplicacao, o codigo tambem cria spans de negocio com `@WithSpan`.
+
+Exemplo:
+
+```java
+@WithSpan("checkout.create-order")
+public CheckoutResult checkout(String customer, int items) {
+    Span.current().setAttribute("demo.customer", customer);
+    Span.current().setAttribute("demo.items", items);
+    ...
+}
+```
+
+`@WithSpan` cria uma etapa visivel no trace.
+
+`Span.current().setAttribute(...)` adiciona informacoes ao span atual.
+
+Spans usados no lab:
+
+- `checkout.create-order`
+- `checkout.calculate-total`
+- `inventory.reserve`
+- `inventory.lookup`
+- `payment.authorize`
+- `demo.hello`
+- `demo.inventory`
+- `demo.slow-operation`
+
+Exemplo de trace esperado:
+
+```text
+GET /observability/checkout/{customer}
+  -> checkout.create-order
+  -> inventory.reserve
+  -> checkout.calculate-total
+  -> payment.authorize
+```
+
+## Erros nos traces
+
+A rota `/observability/error` registra uma excecao no span atual e marca o trace como erro.
+
+Isso permite demonstrar no Grafana:
+
+- traces com erro;
+- status HTTP 500;
+- span associado ao erro;
+- contexto da falha.
+
+## Endpoints da aplicacao
+
+| Endpoint | Uso |
+|---|---|
+| `/observability/help` | Lista as rotas de demo |
+| `/observability/hello/{name}` | Request simples |
+| `/observability/inventory` | Consulta de inventario |
+| `/observability/checkout/{customer}?items=3` | Fluxo de negocio com multiplos spans |
+| `/observability/slow?ms=800` | Simulacao de latencia |
+| `/observability/error` | Simulacao de erro |
+| `/q/metrics` | Metricas Prometheus |
+| `/q/health/ready` | Readiness probe |
+| `/q/health/live` | Liveness probe |
+
+## Configuracao no Deployment
+
+Manifesto:
+
+```text
+openshift/02-app.yaml
+```
+
+Variaveis relevantes:
+
+```yaml
+- name: OTEL_SERVICE_NAME
+  value: quarkus-otel-observability
+- name: OTEL_SERVICE_NAMESPACE
+  value: opentelemetry
+- name: DEPLOYMENT_ENVIRONMENT
+  value: openshift
+- name: OTEL_EXPORTER_OTLP_ENDPOINT
+  value: http://otel-collector.opentelemetry.svc:4317
+```
+
+Essas variaveis fazem a aplicacao enviar traces ao Collector criado pelo Red Hat build of OpenTelemetry.
+
+## ServiceMonitor
+
+Manifesto:
+
+```text
+openshift/03-servicemonitor.yaml
+```
+
+O ServiceMonitor instrui o Prometheus do OpenShift a coletar:
+
+```text
+/q/metrics
+```
+
+## Build e deploy
+
+A partir da raiz do repositorio:
 
 ```bash
-./oc apply -f openshift/11-spring-app.yaml
-./oc start-build spring-otel-observability -n opentelemetry --from-dir=spring-opentelemetry --follow
-./oc rollout status deploy/spring-otel-observability -n opentelemetry
-./oc get route spring-otel-observability -n opentelemetry
+oc apply -f quarkus-opentelemetry/openshift/08-buildconfig.yaml
+oc apply -f quarkus-opentelemetry/openshift/02-app.yaml
+oc apply -f quarkus-opentelemetry/openshift/03-servicemonitor.yaml
+oc -n opentelemetry start-build quarkus-otel-observability --from-dir=quarkus-opentelemetry --follow
+oc -n opentelemetry rollout status deploy/quarkus-otel-observability
 ```
+
+## Validacao
+
+Obter URL:
 
 ```bash
-APP_URL="https://quarkus-otel-observability-opentelemetry.apps.cluster-bzw22.bzw22.sandbox697.opentlc.com"
-
-for i in {1..30}; do
-  curl -s "$APP_URL/observability/hello/user-$i" > /dev/null
-  curl -s "$APP_URL/observability/inventory" > /dev/null
-  curl -s "$APP_URL/observability/checkout/customer-$i" > /dev/null
-  curl -s "$APP_URL/observability/slow" > /dev/null
-  curl -s -o /dev/null -w "error request: HTTP %{http_code}\n" "$APP_URL/observability/error"
-  sleep 1
-done
+QUARKUS_URL=https://$(oc -n opentelemetry get route quarkus-otel-observability -o jsonpath='{.spec.host}')
+echo "$QUARKUS_URL"
 ```
+
+Testar endpoints:
+
+```bash
+curl "$QUARKUS_URL/observability/hello/ana"
+curl "$QUARKUS_URL/observability/checkout/ana?items=4"
+curl "$QUARKUS_URL/observability/slow?ms=900"
+curl -i "$QUARKUS_URL/observability/error"
+```
+
+Ver metricas:
+
+```bash
+curl "$QUARKUS_URL/q/metrics"
+```
+
+Consulta TraceQL no Grafana:
+
+```text
+{ resource.service.name = "quarkus-otel-observability" }
+```
+
+Consulta para spans de negocio:
+
+```text
+{ resource.service.name = "quarkus-otel-observability" && name =~ ".*(checkout|inventory|payment).*" }
+```
+
+## Pontos para adaptação
+
+- Ajustar `quarkus.application.name` para o nome real do servico.
+- Ajustar `OTEL_EXPORTER_OTLP_ENDPOINT` para o Collector do ambiente.
+- Definir `service.namespace` e `deployment.environment` conforme padrao do cliente.
+- Rever amostragem, retencao e cardinalidade de atributos antes de producao.
+- Evitar atributos com dados sensiveis ou alta cardinalidade, como documentos, tokens ou e-mails completos.
