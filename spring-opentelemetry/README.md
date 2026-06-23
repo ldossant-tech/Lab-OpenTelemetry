@@ -14,7 +14,7 @@ Principais referencias Red Hat relacionadas a este lab:
 | User Workload Monitoring / Prometheus | [Monitoring documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/monitoring/index) |
 | Builds com BuildConfig | [Builds using BuildConfig](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/builds_using_buildconfig/index) |
 
-Neste exemplo, a aplicacao usa Spring Boot, Actuator, Micrometer Tracing e exporter OTLP. Os componentes Red Hat suportados no fluxo sao o OpenShift, Red Hat build of OpenTelemetry, OpenShift Monitoring/Prometheus e a base de execucao usada no cluster. As bibliotecas Spring/Micrometer devem ser validadas conforme a matriz de suporte, padroes internos e stack Java adotada pelo cliente.
+Neste exemplo, a aplicacao usa Spring Boot, Actuator, Micrometer Tracing e exporter OTLP. Os componentes Red Hat suportados no fluxo sao o OpenShift, Red Hat build of OpenTelemetry, OpenShift Monitoring/Prometheus e a base de execucao usada no cluster. As bibliotecas Spring/Micrometer devem ser validadas conforme a matriz de suporte, padroes internos e stack Java adotada.
 
 ## Visao geral
 
@@ -129,7 +129,7 @@ No OpenShift, esses traces sao recebidos pelo Collector gerenciado pelo Red Hat 
 management.tracing.sampling.probability=1.0
 ```
 
-Define amostragem de 100% dos traces. Para laboratorio, isso facilita a demonstracao. Em producao, ajuste conforme politica do cliente.
+Define amostragem de 100% dos traces. Para laboratorio, isso facilita a demonstracao. Em producao, ajuste conforme suas politicas.
 
 ```properties
 management.otlp.tracing.endpoint=${OTEL_EXPORTER_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
@@ -339,11 +339,11 @@ Consulta para spans customizados:
 
 - Ajustar `spring.application.name` para o nome real do servico.
 - Ajustar `OTEL_EXPORTER_OTLP_ENDPOINT` para o Collector do ambiente.
-- Definir `service.namespace` e `deployment.environment` conforme padrao do cliente.
+- Definir `service.namespace` e `deployment.environment` conforme seu padroa.
 - Rever `management.tracing.sampling.probability` antes de producao.
 - Evitar tags/spans com dados sensiveis ou alta cardinalidade.
-- Validar a versao Spring Boot/Micrometer conforme a matriz de suporte do cliente.
+- Validar a versao Spring Boot/Micrometer conforme a matriz de suporte.
 
-## Nota para uso em cliente
+## Nota para uso
 
-Este documento descreve a configuracao aplicada neste lab Spring Boot. Para producao, use-o como referencia inicial e confirme a implementacao final com as documentacoes oficiais da Red Hat para a plataforma, a matriz de suporte do cliente, os padroes internos da stack Spring e os requisitos de seguranca/compliance.
+Este documento descreve a configuracao aplicada neste lab Spring Boot. Para producao, use-o como referencia inicial e confirme a implementacao final com as documentacoes oficiais da Red Hat para a plataforma, a matriz de suporte, os padroes internos da stack Spring e os requisitos de seguranca/compliance.
