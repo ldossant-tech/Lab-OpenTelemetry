@@ -41,7 +41,7 @@ Use estas paginas como referencia oficial para validar instalacao, suporte, para
 
 | Tema | Documentacao oficial |
 |---|---|
-| Red Hat build of OpenTelemetry | [Distributed tracing documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/distributed_tracing/index) |
+| Red Hat build of OpenTelemetry | [Red Hat build of OpenTelemetry](https://docs.redhat.com/en/documentation/openshift_container_platform/4.22/html/red_hat_build_of_opentelemetry/index) |
 | Tempo Operator / TempoStack | [Distributed tracing documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/distributed_tracing/index) |
 | User Workload Monitoring / Prometheus | [Monitoring documentation](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/monitoring/index) |
 | OpenShift Data Foundation / ObjectBucketClaim | [Object Bucket Claim](https://docs.redhat.com/en/documentation/red_hat_openshift_data_foundation/latest/html/managing_hybrid_and_multicloud_resources/object-bucket-claim) |
