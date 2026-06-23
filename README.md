@@ -33,7 +33,7 @@ Ao final do lab, você tera:
 | Quarkus | Aplicacao de exemplo | Demonstra `quarkus-opentelemetry` e `/q/metrics` |
 | Spring Boot | Aplicacao de exemplo | Demonstra Actuator, Micrometer e OTLP exporter |
 
-Nota de suporte: os componentes Red Hat do fluxo sao OpenShift, Red Hat build of OpenTelemetry, Tempo Operator, OpenShift Monitoring e ODF quando houver subscricao. O Grafana Operator usado neste lab vem do catalogo comunitario. As bibliotecas das aplicacoes seguem o ecossistema de cada framework e devem ser validadas conforme a matriz de suporte do cliente.
+Nota de suporte: os componentes Red Hat do fluxo sao OpenShift, Red Hat build of OpenTelemetry, Tempo Operator, OpenShift Monitoring e ODF quando houver subscricao. O Grafana Operator usado neste lab vem do catalogo comunitario. As bibliotecas das aplicacoes seguem o ecossistema de cada framework e devem ser validadas conforme a matriz de suporte.
 
 ## Referencias oficiais Red Hat
 
@@ -47,7 +47,7 @@ Use estas paginas como referencia oficial para validar instalacao, suporte, para
 | OpenShift Data Foundation / ObjectBucketClaim | [Object Bucket Claim](https://docs.redhat.com/en/documentation/red_hat_openshift_data_foundation/latest/html/managing_hybrid_and_multicloud_resources/object-bucket-claim) |
 | Builds com BuildConfig | [Builds using BuildConfig](https://docs.redhat.com/en/documentation/openshift_container_platform/latest/html/builds_using_buildconfig/index) |
 
-Os manifests deste repositorio automatizam uma forma de montar o ambiente para demonstracao. Em ambientes de cliente, confirme versoes, canais de Operator, sizing, armazenamento, retencao, TLS, RBAC e politicas de seguranca com a documentacao oficial da Red Hat.
+Os manifests deste repositorio automatizam uma forma de montar o ambiente para demonstracao. Em ambientes produtivos, confirme versoes, canais de Operator, sizing, armazenamento, retencao, TLS, RBAC e politicas de seguranca com a documentacao oficial da Red Hat.
 
 ## Arquitetura
 
@@ -652,7 +652,7 @@ oc -n openshift-user-workload-monitoring get pods
 
 Confira se o datasource Prometheus possui token Bearer valido.
 
-## Proximos passos para o cliente
+## Proximos passos
 
 Depois que o ambiente estiver preparado, use os documentos especificos das aplicacoes para entender o que precisa ser configurado no codigo:
 
@@ -683,4 +683,4 @@ oc -n opentelemetry logs deploy/otel-collector --tail=100
 
 ## Aviso final
 
-Este repositorio e uma recomendacao tecnica para demonstrar uma arquitetura de observabilidade com OpenTelemetry no OpenShift. Ele nao substitui a documentacao oficial da Red Hat. Para implantacoes em ambiente produtivo, siga sempre as documentacoes oficiais, a matriz de suporte vigente, as politicas internas do cliente e o dimensionamento recomendado para a versao do OpenShift e dos Operators instalados.
+Este repositorio e uma recomendacao tecnica para demonstrar uma arquitetura de observabilidade com OpenTelemetry no OpenShift. Ele nao substitui a documentacao oficial da Red Hat. Para implantacoes em ambiente produtivo, siga sempre as documentacoes oficiais, a matriz de suporte vigente, as politicas internas e o dimensionamento recomendado para a versao do OpenShift e dos Operators instalados.
